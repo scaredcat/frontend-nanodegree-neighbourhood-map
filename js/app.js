@@ -1,6 +1,7 @@
 //7250dfc0a3bf33128f44c564e09e66a3 - zomato
 
 var map;
+var SYMBOL_SVG = 'M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z';
 
 function initMap() {
 	var canberra = new google.maps.LatLng(-35.279100, 149.131758);
@@ -33,17 +34,16 @@ function callback(results, status) {
 function createMarker(place) {
 	var placeLoc = place.geometry.location;
 
-	var marker = new Marker({
+	var marker = new google.maps.Marker({
 		map: map,
 		position: place.geometry.location,
 		icon: {
-			path: MAP_PIN,
-			fillColor: '#00CCBB',
+			path: SYMBOL_SVG,
+			fillColor: 'black',
 			fillOpacity: 1,
-			strokeColor: '',
-			strokeWeight: 0
-		},
-		map_icon_label: '<span class="map-icon map-icon-restaurant"></span>'
+			anchor: {x: 12, y: 20}
+
+		}
 	});
 
 

@@ -1,3 +1,38 @@
+//knockout stuff
+
+var model = {
+	zomatoList: [],
+	googleList: [],
+	sidebar: {
+		visible: 0,
+		value: '>'
+	}
+};
+
+var sideBar = function() {
+	var self = this;
+	this.visible = ko.observable(true);
+
+	this.value = ko.computed(function(){
+		if(this.visible()) {
+			return '>';
+		} else {
+			return '<';
+		}
+	}, self);
+}
+
+var viewModel = function() {
+	this.toggleSidebar = function(toggle) {
+		this.sidebar().visible(!(this.sidebar().visible()));
+	}
+
+	this.sidebar = ko.observable(new sideBar());
+};
+
+ko.applyBindings(new viewModel());
+
+
 
 var map;
 var ZOMATO_KEY = '7250dfc0a3bf33128f44c564e09e66a3';
@@ -21,7 +56,6 @@ function getZomatoData() {
 
 function zomatoCallback(results) {
 	for(var i=0; i < results.restaurants.length; i++) {
-		console.log(results.restaurants[i]);
 		createMarker({
 			lat: parseFloat(results.restaurants[i].restaurant.location.latitude), 
 			lng: parseFloat(results.restaurants[i].restaurant.location.longitude)
@@ -34,7 +68,8 @@ function initMap() {
 	var canberra = new google.maps.LatLng(-35.279100, 149.131758);
 	map = new google.maps.Map(document.getElementById('map'), {
 		center: canberra,
-		zoom: 16
+		zoom: 16,
+		mapTypeControl: false
 	});
 
 	var request = {

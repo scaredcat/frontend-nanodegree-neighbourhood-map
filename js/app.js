@@ -1,4 +1,6 @@
-//knockout stuff
+var map;
+var ZOMATO_KEY = '7250dfc0a3bf33128f44c564e09e66a3';
+var SYMBOL_SVG = 'M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z';
 
 var model = {
 	zomatoList: [],
@@ -22,24 +24,30 @@ var sideBar = function() {
 	}, self);
 }
 
+var zomatoRestaurant = function(data) {
+	this.url = ko.observable(data.restaurant.url);
+	this.name = ko.observable(data.restaurant.name);
+	this.rating = ko.observable(data.restaurant.user_rating.aggregate_rating);
+	this.thumb = ko.observable(data.restaurant.thumb);
+	this.latitude = ko.observable(data.restaurant.location.latitude);
+	this.longitude = ko.observable(data.restaurant.location.longitude);
+}
+
 var viewModel = function() {
+	var self = this;
 	this.toggleSidebar = function(toggle) {
 		this.sidebar().visible(!(this.sidebar().visible()));
 	}
 
 	this.sidebar = ko.observable(new sideBar());
-};
 
-ko.applyBindings(new viewModel());
+	this.test = function() {
+		//console.log('it works');
+	}
 
+	this.zomatoRestaurants = ko.observableArray([]);
 
-
-var map;
-var ZOMATO_KEY = '7250dfc0a3bf33128f44c564e09e66a3';
-var SYMBOL_SVG = 'M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z';
-
-
-function getZomatoData() {
+	//zomato data
 	$.ajax({
 		url: 'https://developers.zomato.com/api/v2.1/search',
 		data: {
@@ -50,18 +58,25 @@ function getZomatoData() {
 		type: 'GET',
 		datatype: 'json',
 		beforeSend: function(xhr) {xhr.setRequestHeader('user-key', ZOMATO_KEY);},
-		success: zomatoCallback
-	});
-}
+	}).done(
+		function(results) {
+			model.zomatoList = results.restaurants;
+			for(var i=0; i < results.restaurants.length; i++) {
+				self.zomatoRestaurants.push(new zomatoRestaurant(results.restaurants[i]));
+			}
+			self.markers(results);
+		}
+	);
 
-function zomatoCallback(results) {
-	for(var i=0; i < results.restaurants.length; i++) {
-		createMarker({
-			lat: parseFloat(results.restaurants[i].restaurant.location.latitude), 
-			lng: parseFloat(results.restaurants[i].restaurant.location.longitude)
-		}, 'red');
+	this.markers = function(results) {
+		this.zomatoRestaurants().forEach(function(item) {
+			createMarker({
+				lat: parseFloat(item.latitude()), 
+				lng: parseFloat(item.longitude())
+			}, {name: item.name()}, 'red');
+		});
 	}
-}
+};
 
 
 function initMap() {
@@ -83,19 +98,22 @@ function initMap() {
 
 	// types: restaurant, cafe, bakery, bar, 
 
-	getZomatoData();
+	ko.applyBindings(new viewModel());
+
+	//console.log(viewModel);
 }
 
 function callback(results, status) {
 	if (status == google.maps.places.PlacesServiceStatus.OK) {
+		model.googleList = results;
 		for (var i = 0; i < results.length; i++) {
 			var place = results[i];
-			createMarker(results[i].geometry.location);
+			createMarker(results[i].geometry.location, place);
 		}
 	}
 }
 
-function createMarker(location, colour = 'black') {
+function createMarker(location, place, colour = 'black') {
 	var marker = new google.maps.Marker({
 		map: map,
 		position: location,
@@ -107,14 +125,12 @@ function createMarker(location, colour = 'black') {
 		}
 	});
 
+	var infowindow = new google.maps.InfoWindow({
+          content: 'testtest'
+    });
 
-	// var marker = new google.maps.Marker({
-	// 	map: map,
-	// 	position: place.geometry.location
-	// });
-
-	// google.maps.event.addListener(marker, 'click', function() {
-	// 	infowindow.setContent(place.name);
-	// 	infowindow.open(map, this);
-	// });
+	google.maps.event.addListener(marker, 'click', function() {
+		infowindow.setContent(place.name);
+		infowindow.open(map, this);
+	});
 }

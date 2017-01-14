@@ -9,6 +9,7 @@
 
 	body {
 		margin: 0;
+		overflow: hidden;
 	}
 
 	.map-icon-label .map-icon {
@@ -46,11 +47,21 @@
 		font-family: 'Helvetica';
 		margin-top: 0;
 	}
+
+	#restaurantList {
+		overflow-y: scroll;
+		overflow-x: show;
+		height: 50%;
+	}
 </style>
 </head>
 <body>
 <div id="sidebar" data-bind="style: {right: sidebar().visible()? '100%' : '', boxShadow: sidebar().visible()? '': '5px 0px 20px grey'}">
 	<h1>Zomato + G-maps</h1>
+	<input id="search" type="text" data-bind="value: filter, valueUpdate: 'afterkeydown'"/>
+	<ul data-bind="foreach: filteredZomato" id="restaurantList">
+		<li data-bind="text: name"></li>
+	</ul>
 	<a href="#" id="control" data-bind="click: toggleSidebar, text: sidebar().value">&lt;</a>
 </div>
 <div id="map"></div>

@@ -61,10 +61,6 @@ var viewModel = function() {
 
 	this.filter = ko.observable('');
 
-	this.test = function() {
-		//console.log('it works');
-	}
-
 	this.restaurants = ko.observableArray([]);
 
 	//zomato data
@@ -176,8 +172,7 @@ var viewModel = function() {
 	// 	}, {name: restaurant.name()}, colour);
 	// }
 
-	this.focusMarker = function(item) {
-		console.log(item.marker);
+	this.focusMarker = function(item) {;
 		//item.marker.click();
 
 		google.maps.event.trigger(item.marker, 'click');
@@ -209,15 +204,15 @@ function createMarker(location, infoContent, colour = 'black') {
 
 	google.maps.event.addListener(marker, 'click', function() {
 		//infowindow.setContent(name);
-		infowindow.open(map, this);
         currentMark = this;
         previousColour = marker.icon.fillColor;
-        currentMark.icon = createMarker(marker.position, infowindow.content, 'blue');
+		infowindow.open(map, this);
+		currentMark.setIcon(markerIcon('blue'));
 	});
 
 	// change marker back to original colour
 	google.maps.event.addListener(infowindow,'closeclick',function(){
-		 currentMark.icon = createMarker(marker.position, infowindow.content, previousColour);
+		currentMark.setIcon(markerIcon(previousColour));
 	});
 
 	return marker;

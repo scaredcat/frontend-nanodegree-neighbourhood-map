@@ -52,15 +52,26 @@
 		overflow-y: scroll;
 		overflow-x: show;
 		height: 50%;
+		list-style-type: none;
+		padding-left: none;
+	}
+
+	.restaurant {
+		cursor: pointer;
+		margin-top: .2em;
+	}
+
+	.red {
+		color: red;
 	}
 </style>
 </head>
 <body>
 <div id="sidebar" data-bind="style: {right: sidebar().visible()? '100%' : '', boxShadow: sidebar().visible()? '': '5px 0px 20px grey'}">
-	<h1>Zomato + G-maps</h1>
+	<h1><span class="red">Zomato</span> + G-maps</h1>
 	<input id="search" type="text" data-bind="value: filter, valueUpdate: 'afterkeydown'"/>
 	<ul data-bind="foreach: filteredZomato" id="restaurantList">
-		<li data-bind="text: name"></li>
+		<li data-bind="text: name, click: $root.focusMarker" class="restaurant"></li>
 	</ul>
 	<a href="#" id="control" data-bind="click: toggleSidebar, text: sidebar().value">&lt;</a>
 </div>

@@ -38,8 +38,17 @@ var Restaurant = function(data) {
 	this.thumb = ko.observable(data.thumb);
 	this.latitude = ko.observable(data.latitude);
 	this.longitude = ko.observable(data.longitude);
-	this.marker = createMarker({lat: parseFloat(data.latitude), lng: parseFloat(data.longitude)}, data.name, data.colour);
 	this.colour = data.colour;
+
+	var content = '<h4>' + data.name+'</h4>';
+	if (data.thumb) {
+		content += '<img style="width: 100px; margin: auto; display: block" src="'+data.thumb+ '" alt="' + data.name +' picture"/>';
+	}
+
+	this.marker = createMarker(
+		  {lat: parseFloat(data.latitude), lng: parseFloat(data.longitude)}
+		, content
+		, data.colour);
 }
 
 var viewModel = function() {
@@ -102,11 +111,18 @@ var viewModel = function() {
 
 			for (var i = 0; i < results.length; i++) {
 				var place = results[i];
+
+				var photo = '';
+				if(place.hasOwnProperty('photos')) {
+					photo = place.photos[0].getUrl({maxWidth: 100});
+				}
+
+
 				self.restaurants.push(new Restaurant({
 					url: null,
 					name: place.name,
 					rating: place.rating,
-					thumb: (place.hasOwnProperty('photos'))? place.photos[0].getUrl : '',
+					thumb: photo,
 					latitude: place.geometry.location.lat(),
 					longitude: place.geometry.location.lng(),
 					colour: 'black'
@@ -144,20 +160,27 @@ var viewModel = function() {
 	    }
 	}, self);
 
-	this.markers = function(results) {
-		this.restaurants().forEach(function(item) {
-			item.marker = createMarker({
-				lat: parseFloat(item.latitude()), 
-				lng: parseFloat(item.longitude())
-			}, {name: item.name()}, item.colour);
-		});
-	};
+	// this.markers = function(results) {
+	// 	this.restaurants().forEach(function(item) {
+	// 		item.marker = createMarker({
+	// 			lat: parseFloat(item.latitude()), 
+	// 			lng: parseFloat(item.longitude())
+	// 		}, {name: item.name()}, item.colour);
+	// 	});
+	// };
 
-	this.createMarker = function(restaurant, colour) {
-		restaurant.marker = createMarker({
-				lat: parseFloat(restaurant.latitude()), 
-				lng: parseFloat(restaurant.longitude())
-		}, {name: restaurant.name()}, colour);
+	// this.createMarker = function(restaurant, colour) {
+	// 	restaurant.marker = createMarker({
+	// 			lat: parseFloat(restaurant.latitude()), 
+	// 			lng: parseFloat(restaurant.longitude())
+	// 	}, {name: restaurant.name()}, colour);
+	// }
+
+	this.focusMarker = function(item) {
+		console.log(item.marker);
+		//item.marker.click();
+
+		google.maps.event.trigger(item.marker, 'click');
 	}
 };
 
@@ -173,26 +196,38 @@ function initMap() {
 	ko.applyBindings(new viewModel());
 }
 
-function createMarker(location, name, colour = 'black') {
+function createMarker(location, infoContent, colour = 'black') {
 	var marker = new google.maps.Marker({
 		map: map,
 		position: location,
-		icon: {
-			path: SYMBOL_SVG,
-			fillColor: colour,
-			fillOpacity: 1,
-			anchor: {x: 12, y: 20}
-		}
+		icon: markerIcon(colour)
 	});
 
 	var infowindow = new google.maps.InfoWindow({
-          content: 'testtest'
-    });
+		content: infoContent
+	});
 
 	google.maps.event.addListener(marker, 'click', function() {
-		infowindow.setContent(name);
+		//infowindow.setContent(name);
 		infowindow.open(map, this);
+        currentMark = this;
+        previousColour = marker.icon.fillColor;
+        currentMark.icon = createMarker(marker.position, infowindow.content, 'blue');
+	});
+
+	// change marker back to original colour
+	google.maps.event.addListener(infowindow,'closeclick',function(){
+		 currentMark.icon = createMarker(marker.position, infowindow.content, previousColour);
 	});
 
 	return marker;
+}
+
+function markerIcon(colour) {
+	return {
+		path: SYMBOL_SVG,
+		fillColor: colour,
+		fillOpacity: 1,
+		anchor: {x: 12, y: 20}
+	};
 }

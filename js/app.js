@@ -1,7 +1,15 @@
+//load the google maps api async
+$.getScript('https://maps.googleapis.com/maps/api/js?key=AIzaSyCkYZZZx8E7SH2V3coUYothzR9h64uCbU4&v=3&libraries=places&callback=initMap').fail(function(){
+	window.alert('Unable to load google maps API');
+});
+
 var map;
 var ZOMATO_KEY = '7250dfc0a3bf33128f44c564e09e66a3';
 var SYMBOL_SVG = 'M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z';
 var CANBERRA = null;
+var infowindow = null; //only have one global infowindow
+var currentMark = null; //keep track of the marker that is currently open
+var previousColour = null; //also keep the colour of the currently open icon
 
 // stores the data received from the api call as well as state data
 // for the view
@@ -32,26 +40,30 @@ var sideBar = function() {
 * the restaurants displayed on the page
 */
 var Restaurant = function(data) {
-	this.url = ko.observable(data.url);
-	this.name = ko.observable(data.name);
-	this.rating = ko.observable(data.rating);
-	this.thumb = ko.observable(data.thumb);
-	this.latitude = ko.observable(data.latitude);
-	this.longitude = ko.observable(data.longitude);
+	this.url = data.url;
+	this.name = data.name;
+	this.rating = data.rating;
+	this.thumb = data.thumb;
+	this.latitude = data.latitude;
+	this.longitude = data.longitude;
 	this.colour = data.colour;
 
 	var content = '<h4>' + data.name+'</h4>';
 	if (data.thumb) {
 		content += '<img style="width: 100px; margin: auto; display: block" src="'+data.thumb+ '" alt="' + data.name +' picture"/>';
+	} else {
+		content += '<span class="warning">Image not available</span>'
 	}
+
+	this.content = ko.observable(content);
 
 	this.marker = createMarker(
 		  {lat: parseFloat(data.latitude), lng: parseFloat(data.longitude)}
-		, content
+		, this.content()
 		, data.colour);
 }
 
-var viewModel = function() {
+var ViewModel = function() {
 	var self = this;
 	this.toggleSidebar = function(toggle) {
 		this.sidebar().visible(!(this.sidebar().visible()));
@@ -77,8 +89,8 @@ var viewModel = function() {
 	}).done(
 		function(results) {
 			model.zomatoList = results.restaurants;
-			for(var i=0; i < results.restaurants.length; i++) {
-				var restaurant = results.restaurants[i].restaurant;
+			results.restaurants.forEach(function(item) {
+				var restaurant = item.restaurant;
 
 				self.restaurants.push(new Restaurant({
 					url: restaurant.url,
@@ -89,9 +101,11 @@ var viewModel = function() {
 					longitude: restaurant.location.longitude,
 					colour: 'red'
 				}));
-			}
+			});
 		}
-	);
+	).fail(function() {
+		window.alert('Unable to load Zomato data. Please refresh the page to try again.');
+	});
 
 	// load Google maps place data
 	var request = {
@@ -105,15 +119,11 @@ var viewModel = function() {
 		if (status == google.maps.places.PlacesServiceStatus.OK) {
 			model.googleList = results;
 
-			for (var i = 0; i < results.length; i++) {
-				var place = results[i];
-
+			results.forEach(function(place) {
 				var photo = '';
 				if(place.hasOwnProperty('photos')) {
 					photo = place.photos[0].getUrl({maxWidth: 100});
 				}
-
-
 				self.restaurants.push(new Restaurant({
 					url: null,
 					name: place.name,
@@ -122,10 +132,10 @@ var viewModel = function() {
 					latitude: place.geometry.location.lat(),
 					longitude: place.geometry.location.lng(),
 					colour: 'black'
-				}));
-				//self.createMarker((self.restaurants())[self.restaurants().length()-1], 'black');
-				//createMarker(place.geometry.location, place);
-			}
+				}));;
+			});
+		} else {
+			window.alert('Unable to fetch google maps Place data. Please refresh the page to try again.');
 		}
 	});
 
@@ -138,43 +148,21 @@ var viewModel = function() {
 		});
 	}
 
-	this.filteredZomato = ko.computed(function() {
-	    var filter = this.filter().toLowerCase();
-	    if (!filter) {
-	    	self.showAllRestaurants();
-	        return this.restaurants();
-	    } else {
-	        return ko.utils.arrayFilter(this.restaurants(), function(restaurant) {
-	        	var show = restaurant.name().toLowerCase().substring(0, filter.length) === filter;
-	        	if (show) {
-	        		restaurant.marker.setMap(map);
-	        	} else {
-	        		restaurant.marker.setMap(null);
-	        	}
-	            return show;
-	        });
-	    }
+	this.filtered = ko.computed(function() {
+		var filter = this.filter().toLowerCase();
+		if (!filter) {
+			self.showAllRestaurants();
+			return this.restaurants();
+		} else {
+			return ko.utils.arrayFilter(this.restaurants(), function(restaurant) {
+				var show = restaurant.name.toLowerCase().indexOf(filter) != -1;
+				restaurant.marker.setVisible(show)
+				return show;
+			});
+		}
 	}, self);
 
-	// this.markers = function(results) {
-	// 	this.restaurants().forEach(function(item) {
-	// 		item.marker = createMarker({
-	// 			lat: parseFloat(item.latitude()), 
-	// 			lng: parseFloat(item.longitude())
-	// 		}, {name: item.name()}, item.colour);
-	// 	});
-	// };
-
-	// this.createMarker = function(restaurant, colour) {
-	// 	restaurant.marker = createMarker({
-	// 			lat: parseFloat(restaurant.latitude()), 
-	// 			lng: parseFloat(restaurant.longitude())
-	// 	}, {name: restaurant.name()}, colour);
-	// }
-
 	this.focusMarker = function(item) {;
-		//item.marker.click();
-
 		google.maps.event.trigger(item.marker, 'click');
 	}
 };
@@ -188,24 +176,25 @@ function initMap() {
 		mapTypeControl: false
 	});
 
-	ko.applyBindings(new viewModel());
+	infowindow = new google.maps.InfoWindow(); //global infowindow
+	ko.applyBindings(new ViewModel());
 }
 
 function createMarker(location, infoContent, colour = 'black') {
 	var marker = new google.maps.Marker({
 		map: map,
 		position: location,
-		icon: markerIcon(colour)
-	});
-
-	var infowindow = new google.maps.InfoWindow({
-		content: infoContent
+		icon: markerIcon(colour),
+		originColour: colour
 	});
 
 	google.maps.event.addListener(marker, 'click', function() {
-		//infowindow.setContent(name);
-        currentMark = this;
-        previousColour = marker.icon.fillColor;
+		if(currentMark) {
+			currentMark.setIcon(markerIcon(previousColour));
+		}
+		currentMark = this;
+		previousColour = marker.icon.fillColor;
+		infowindow.setContent(infoContent);
 		infowindow.open(map, this);
 		currentMark.setIcon(markerIcon('blue'));
 	});

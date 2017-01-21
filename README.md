@@ -1,4 +1,5 @@
-== Udacity Neighbourhood Map ==
+## Udacity Neighbourhood Map
+
 This project was created for the Udacity Front End Nanodegree Program.
 
 In order to view the project you can follow (this link)[https://scaredcat.github.io/frontend-nanodegree-neighbourhood-map/] or download the project and run index.html

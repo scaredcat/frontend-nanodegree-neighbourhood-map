@@ -1,8 +1,3 @@
-//load the google maps api async
-$.getScript('https://maps.googleapis.com/maps/api/js?key=AIzaSyCkYZZZx8E7SH2V3coUYothzR9h64uCbU4&v=3&libraries=places&callback=initMap').fail(function(){
-	window.alert('Unable to load google maps API');
-});
-
 var map;
 var ZOMATO_KEY = '7250dfc0a3bf33128f44c564e09e66a3';
 var SYMBOL_SVG = 'M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z';
@@ -27,19 +22,16 @@ var sideBar = function() {
 	this.visible = ko.observable(true);
 
 	this.value = ko.computed(function(){
-		if(this.visible()) {
-			return '>';
-		} else {
-			return '<';
-		}
+		return this.visible()? '>' : '<';
 	}, self);
-}
+};
 
 /**
 * This returns an Object type of Restaurant which is then later used to filter
 * the restaurants displayed on the page
 */
 var Restaurant = function(data) {
+	var self = this;
 	this.url = data.url;
 	this.name = data.name;
 	this.rating = data.rating;
@@ -48,26 +40,24 @@ var Restaurant = function(data) {
 	this.longitude = data.longitude;
 	this.colour = data.colour;
 
-	var content = '<h4>' + data.name+'</h4>';
+	this.content = '<h4>' + data.name+'</h4>';
 	if (data.thumb) {
-		content += '<img style="width: 100px; margin: auto; display: block" src="'+data.thumb+ '" alt="' + data.name +' picture"/>';
+		this.content += '<img style="width: 100px; margin: auto; display: block" src="'+data.thumb+ '" alt="' + data.name +' picture"/>';
 	} else {
-		content += '<span class="warning">Image not available</span>'
+		this.content += '<span class="warning">Image not available</span>';
 	}
 
-	this.content = ko.observable(content);
-
 	this.marker = createMarker(
-		  {lat: parseFloat(data.latitude), lng: parseFloat(data.longitude)}
-		, this.content()
-		, data.colour);
-}
+		{lat: parseFloat(data.latitude), lng: parseFloat(data.longitude)},
+		this.content,
+		data.colour);
+};
 
 var ViewModel = function() {
 	var self = this;
 	this.toggleSidebar = function(toggle) {
 		this.sidebar().visible(!(this.sidebar().visible()));
-	}
+	};
 
 	this.sidebar = ko.observable(new sideBar());
 
@@ -132,7 +122,7 @@ var ViewModel = function() {
 					latitude: place.geometry.location.lat(),
 					longitude: place.geometry.location.lng(),
 					colour: 'black'
-				}));;
+				}));
 			});
 		} else {
 			window.alert('Unable to fetch google maps Place data. Please refresh the page to try again.');
@@ -143,10 +133,10 @@ var ViewModel = function() {
 	this.showAllRestaurants = function() {
 		self.restaurants().forEach(function(restaurant) {
 			if(restaurant.marker) {
-				restaurant.marker.setMap(map);
+				restaurant.marker.setVisible(true);
 			}
 		});
-	}
+	};
 
 	this.filtered = ko.computed(function() {
 		var filter = this.filter().toLowerCase();
@@ -156,15 +146,16 @@ var ViewModel = function() {
 		} else {
 			return ko.utils.arrayFilter(this.restaurants(), function(restaurant) {
 				var show = restaurant.name.toLowerCase().indexOf(filter) != -1;
-				restaurant.marker.setVisible(show)
+				restaurant.marker.setVisible(show);
 				return show;
 			});
 		}
 	}, self);
 
-	this.focusMarker = function(item) {;
+	this.focusMarker = function(item) {
+		self.toggleSidebar();
 		google.maps.event.trigger(item.marker, 'click');
-	}
+	};
 };
 
 

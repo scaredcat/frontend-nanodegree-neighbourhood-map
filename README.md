@@ -12,4 +12,3 @@ Further possible extensions to this project include:
 * Adding more information on the info-window when a restaurant is clicked such as a URL and user rating.
 * Adding matching colours for the list elements on the sidebar (so that they match those on the map)
 * Re-doing the restaurant search based on the current maps location whenever the user moves the map
-* Correcting the zoom-to-marker default functionality to place the focus of the map to the right side of the screen. This will prevent the sidebar covering up the marker.

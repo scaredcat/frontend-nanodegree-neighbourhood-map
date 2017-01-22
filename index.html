@@ -74,7 +74,7 @@
 <div id="sidebar" data-bind="style: {right: sidebar().visible()? '100%' : '', boxShadow: sidebar().visible()? '': '5px 0px 20px grey'}">
 	<div id="header">
 		<h1><span class="red">Zomato</span> + G-maps</h1>
-		<input id="search" type="text" data-bind="value: filter, valueUpdate: 'afterkeydown'"/>
+		<input id="search" type="text" data-bind="textInput: filter"/>
 	</div>
 	<ul data-bind="foreach: filtered" id="restaurantList">
 		<li data-bind="text: name, click: $root.focusMarker" class="restaurant"></li>
@@ -87,5 +87,6 @@
 <script src="js/libraries/knockout-3.4.1.js"></script>
 <script src="js/libraries/jquery-3.1.1.min.js"></script>
 <script src="js/app.js"></script>
+<script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCkYZZZx8E7SH2V3coUYothzR9h64uCbU4&v=3&libraries=places&callback=initMap"></script>
 </body>
 </html>
